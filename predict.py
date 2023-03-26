@@ -2,9 +2,9 @@ from sklearn.metrics import accuracy_score
 import torch.nn as nn
 import torch
 import pytorch_lightning as pl
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModel
 import torch.nn.functional as F
-from transformers import AutoTokenizer
+
 import re
 import string
 import demoji
@@ -43,10 +43,13 @@ dropout_prob = 0.2
 
 
 class BiLSTMModel(pl.LightningModule):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, num_layers, dropout_prob):
+    def __init__(self, vocab_size, hidden_dim, num_layers, dropout_prob):
         super().__init__()
+        """
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
-        self.bilstm = nn.LSTM(embedding_dim, hidden_dim,
+        """
+        self.phobert = AutoModel.from_pretrained("vinai/phobert-large")
+        self.bilstm = nn.LSTM(self.phobert.config.hidden_size, hidden_dim,
                               num_layers=num_layers, batch_first=True, bidirectional=True)
         self.dropout = nn.Dropout(dropout_prob)
         self.attention = nn.Linear(hidden_dim * 2, 1)
@@ -58,7 +61,10 @@ class BiLSTMModel(pl.LightningModule):
         self.loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(self, input_ids, attention_mask):
+        """
         embedded = self.embedding(input_ids)
+        """
+        embedded = self.phobert(input_ids, attention_mask)[0]
         embedded = self.dropout(embedded)
         outputs, _ = self.bilstm(embedded)
         outputs = self.dropout(outputs)
