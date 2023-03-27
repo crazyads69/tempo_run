@@ -62,6 +62,7 @@ class BiLSTMModel(pl.LightningModule):
         self.validation_step_outputs = []
         self.test_step_outputs = []
         self.loss_fn = nn.BCEWithLogitsLoss()
+        self.save_hyperparameters()
 
     def forward(self, input_ids, attention_mask):
         """
