@@ -42,6 +42,7 @@ num_layers = 6
 dropout_prob = 0.2
 
 
+
 class BiLSTMModel(pl.LightningModule):
     def __init__(self, vocab_size, hidden_dim, num_layers, dropout_prob):
         super().__init__()
@@ -49,6 +50,8 @@ class BiLSTMModel(pl.LightningModule):
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         """
         self.phobert = AutoModel.from_pretrained("vinai/phobert-base")
+        for param in self.phobert.parameters():
+            param.requires_grad = False
         self.bilstm = nn.LSTM(self.phobert.config.hidden_size, hidden_dim,
                               num_layers=num_layers, batch_first=True, bidirectional=True)
         self.dropout = nn.Dropout(dropout_prob)
@@ -63,10 +66,17 @@ class BiLSTMModel(pl.LightningModule):
     def forward(self, input_ids, attention_mask):
         """
         embedded = self.embedding(input_ids)
-        """
+        
         embedded = self.phobert(input_ids, attention_mask)[0]
         embedded = self.dropout(embedded)
-        outputs, _ = self.bilstm(embedded)
+        """
+        with torch.no_grad():
+            embedded = self.phobert(input_ids=input_ids, attention_mask=attention_mask)
+            embedded_output = embedded.last_hidden_state
+        # detach sequence_output to prevent gradients from being computed on PhoBERT
+        embedded_output = embedded_output.detach()
+        embedded_output = self.dropout(embedded_output)
+        outputs, _ = self.bilstm(embedded_output)
         outputs = self.dropout(outputs)
         attention_logits = self.attention(outputs)
         attention_logits = attention_logits.masked_fill(
