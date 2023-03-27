@@ -202,7 +202,7 @@ model = BiLSTMModel(vocab_size=vocab_size,
                     embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers, dropout_prob=dropout_prob)
 """
 model = BiLSTMModel.load_from_checkpoint('checkpoint.ckpt', vocab_size=tokenizer.vocab_size,
-                                         embedding_dim=128, hidden_dim=64, num_layers=4, dropout_prob=0.2)
+                                         embedding_dim=128, hidden_dim=64, num_layers=6, dropout_prob=0.2)
 sentence = "nhiệt tình giảng dạy , gần gũi với sinh viên ."
 label = model.predict(sentence)
 print(label)
