@@ -35,7 +35,7 @@ stop_words = ['doubledot', 'sub', 'dot', 'add', 'fraction', 'multiply',
 vocab_size = tokenizer.vocab_size
 embedding_dim = 128
 hidden_dim = 64
-num_layers = 6
+num_layers = 4
 dropout_prob = 0.2
 
 def remove_stopwords(sentence, stop_words):
