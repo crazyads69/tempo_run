@@ -22,7 +22,7 @@ val_data = prepare_val_set()
 val_label = prepare_val_label()
 test_data = prepare_test_set()
 test_label = prepare_test_label()
-tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-large")
+tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
 
 stop_words = ['doubledot', 'sub', 'dot', 'add', 'fraction', 'multiply',
               'và', 'là', 'của', 'cho', 'được', 'trong', 'từ', 'nhưng', 'với', 'tại']
@@ -35,7 +35,7 @@ stop_words = ['doubledot', 'sub', 'dot', 'add', 'fraction', 'multiply',
 vocab_size = tokenizer.vocab_size
 embedding_dim = 128
 hidden_dim = 64
-num_layers = 4
+num_layers = 6
 dropout_prob = 0.2
 
 def remove_stopwords(sentence, stop_words):
@@ -117,7 +117,7 @@ class BiLSTMModel(pl.LightningModule):
         """
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         """
-        self.phobert = AutoModel.from_pretrained("vinai/phobert-large")
+        self.phobert = AutoModel.from_pretrained("vinai/phobert-base")
         self.bilstm = nn.LSTM(self.phobert.config.hidden_size, hidden_dim,
                               num_layers=num_layers, batch_first=True, bidirectional=True)
         self.dropout = nn.Dropout(dropout_prob)
