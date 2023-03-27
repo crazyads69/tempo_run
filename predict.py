@@ -34,7 +34,7 @@ def clean_text(text):
     return text
 
 
-tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-large")
+tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base")
 vocab_size = tokenizer.vocab_size
 embedding_dim = 128
 hidden_dim = 64
@@ -48,7 +48,7 @@ class BiLSTMModel(pl.LightningModule):
         """
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         """
-        self.phobert = AutoModel.from_pretrained("vinai/phobert-large")
+        self.phobert = AutoModel.from_pretrained("vinai/phobert-base")
         self.bilstm = nn.LSTM(self.phobert.config.hidden_size, hidden_dim,
                               num_layers=num_layers, batch_first=True, bidirectional=True)
         self.dropout = nn.Dropout(dropout_prob)
