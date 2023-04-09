@@ -37,13 +37,7 @@ def clean_csv():
     for x in file_list:
         df = pl.read_csv(x)
         df_2 = df.drop("topic")
-        df_3 = df_2.filter(pl.col("sentiment") != 1)
-        """
-        Convert positive feedback with indicate value 2 to 1
-        """
-        df_4 = df_3.with_columns([pl.when(pl.col("sentiment") == 2).then(
-            1).otherwise(pl.col("sentiment")).alias("sentiment")])
-        df_4.write_csv(x)
+        df_2.write_csv(x)
         print("Finish clear csv file: "+x)
 
 

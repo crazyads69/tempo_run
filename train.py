@@ -38,6 +38,7 @@ hidden_dim = 64
 num_layers = 4
 dropout_prob = 0.2
 
+
 def remove_stopwords(sentence, stop_words):
     words = sentence.split()
     filtered_words = [word for word in words if word.lower() not in stop_words]
@@ -129,18 +130,19 @@ class BiLSTMModel(pl.LightningModule):
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.test_step_outputs = []
-        self.loss_fn = nn.BCEWithLogitsLoss()
+        self.loss_fn = nn.CrossEntropyLoss()
         self.save_hyperparameters()
 
     def forward(self, input_ids, attention_mask):
         """
         embedded = self.embedding(input_ids)
-        
+
         embedded = self.phobert(input_ids, attention_mask)[0]
         embedded = self.dropout(embedded)
         """
         with torch.no_grad():
-            embedded = self.phobert(input_ids=input_ids, attention_mask=attention_mask)
+            embedded = self.phobert(
+                input_ids=input_ids, attention_mask=attention_mask)
             embedded_output = embedded.last_hidden_state
         # detach sequence_output to prevent gradients from being computed on PhoBERT
         embedded_output = embedded_output.detach()
@@ -154,7 +156,7 @@ class BiLSTMModel(pl.LightningModule):
         weighted_outputs = torch.sum(outputs * attention_weights, dim=1)
         dense_outputs = F.relu(self.fc1(weighted_outputs))
         logits = self.fc2(dense_outputs)
-        return logits.squeeze()
+        return logits
 
     def training_step(self, batch, batch_idx):
         input_ids = batch['input_ids']
@@ -178,9 +180,17 @@ class BiLSTMModel(pl.LightningModule):
             if 'label' in output:
                 y_true.append(output['label'].item())
             if 'logits' in output:
+                """
                 y_pred.append(
                     float(torch.sigmoid(output['logits']).item() >= 0.5))
-
+                """
+                logit = output['logits']
+                probs = F.softmax(logit, dim=1)
+                preds = torch.zeros_like(logit)
+                preds[probs <= 1/3] = 0
+                preds[torch.logical_and(probs > 1/3, probs <= 2/3)] = 1
+                preds[probs > 2/3] = 2
+                y_pred.append(float(preds.item()))
         acc = accuracy_score(y_true, y_pred)
         self.log('train_acc', acc, prog_bar=True, on_epoch=True)
         self.training_step_outputs.clear()
@@ -207,8 +217,17 @@ class BiLSTMModel(pl.LightningModule):
             if 'label' in output:
                 y_true.append(output['label'].item())
             if 'logits' in output:
+                """
                 y_pred.append(
                     float(torch.sigmoid(output['logits']).item() >= 0.5))
+                """
+                logit = output['logits']
+                probs = F.softmax(logit, dim=1)
+                preds = torch.zeros_like(logit)
+                preds[probs <= 1/3] = 0
+                preds[torch.logical_and(probs > 1/3, probs <= 2/3)] = 1
+                preds[probs > 2/3] = 2
+                y_pred.append(float(preds.item()))
         acc = accuracy_score(y_true, y_pred)
         self.log('val_acc', acc, prog_bar=True, on_epoch=True)
         self.validation_step_outputs.clear()
@@ -235,8 +254,17 @@ class BiLSTMModel(pl.LightningModule):
             if 'label' in output:
                 y_true.append(output['label'].item())
             if 'logits' in output:
+                """
                 y_pred.append(
                     float(torch.sigmoid(output['logits']).item() >= 0.5))
+                """
+                logit = output['logits']
+                probs = F.softmax(logit, dim=1)
+                preds = torch.zeros_like(logit)
+                preds[probs <= 1/3] = 0
+                preds[torch.logical_and(probs > 1/3, probs <= 2/3)] = 1
+                preds[probs > 2/3] = 2
+                y_pred.append(float(preds.item()))
         acc = accuracy_score(y_true, y_pred)
         self.log('test_acc', acc, prog_bar=True, on_epoch=True)
         self.test_step_outputs.clear()
@@ -265,16 +293,13 @@ class BiLSTMModel(pl.LightningModule):
         # Pass the input sequence through the model to get the predicted logits
         logits = self(input_ids, attention_mask)
         # Apply a sigmoid function to the logits to get the predicted probabilities
-        probs = torch.sigmoid(logits)
+        probs = F.softmax(logits, dim=1)
         # Round the probabilities to get the predicted labels
-        avg = probs.mean().item()
-        print("Confidence:",avg)
-        # Return the predicted label (0 for negative, 1 for positive)
-        if avg >= 0.5:
-            return 1
-        else:
-            return 0
-
+        preds = torch.zeros_like(logits)
+        preds[probs <= 1/3] = 0
+        preds[torch.logical_and(probs > 1/3, probs <= 2/3)] = 1
+        preds[probs > 2/3] = 2
+        return preds
 
 
 """
